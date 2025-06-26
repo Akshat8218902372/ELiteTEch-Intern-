@@ -1,0 +1,55 @@
+import pulp
+from pulp import LpMaximize, LpProblem, LpVariable, value
+import matplotlib.pyplot as plt
+
+model = LpProblem(name="product-mix-optimization", sense=LpMaximize)
+
+x = LpVariable(name="Product_A", lowBound=0)
+y = LpVariable(name="Product_B", lowBound=0)
+
+model += 40 * x + 30 * y, "Total_Profit"
+
+model += (2 * x + y <= 100, "Machine_Hours")
+
+model += (x + y <= 80, "Labor_Hours")
+
+model += (x <= 40, "Market_Demand_Product_A")
+
+status = model.solve()
+
+print(f"Status: {model.status}, {pulp.LpStatus[model.status]}")
+print(f"Optimal Units of Product A to Produce: {x.value()}")
+print(f"Optimal Units of Product B to Produce: {y.value()}")
+print(f"Maximum Profit: ${model.objective.value()}")
+
+import numpy as np
+
+x_vals = np.linspace(0, 50, 200)
+y1 = 100 - 2 * x_vals
+y2 = 80 - x_vals
+y3 = 40 * np.ones_like(x_vals)
+
+plt.figure(figsize=(10, 7))
+plt.plot(x_vals, y1, label='2x + y ≤ 100 (Machine Hours)')
+plt.plot(x_vals, y2, label='x + y ≤ 80 (Labor Hours)')
+plt.plot(x_vals, y3, label='x ≤ 40 (Market Demand)')
+
+plt.xlim((0, 50))
+plt.ylim((0, 100))
+
+y4 = np.minimum(y1, y2)
+y_feasible = np.minimum(y4, y3)
+plt.fill_between(x_vals, 0, y_feasible, color='lightgreen', alpha=0.5)
+
+plt.scatter(x.value(), y.value(), color='red', label='Optimal Solution', zorder=5)
+plt.xlabel('Units of Product A')
+plt.ylabel('Units of Product B')
+plt.title('Product Mix Optimization - Feasible Region and Optimal Solution')
+plt.legend()
+plt.grid()
+plt.show()
+
+print("\n📌 Insights:")
+print(f"- The company should produce {x.value()} units of Product A and {y.value()} units of Product B to maximize profit.")
+print(f"- The maximum achievable profit is ${model.objective.value()}.")
+print("- All constraints (machine hours, labor hours, and market demand) have been satisfied.")
